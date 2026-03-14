@@ -36,37 +36,25 @@ export async function studentRoutes(app: FastifyInstance) {
       const student = await prisma.student.findFirst({
         where: { id, user_id },
         include: {
-          goals: {
-            orderBy: { created_at: "desc" },
-            select: {
-              id: true,
-              title: true,
-              description: true,
-              status: true,
-              start_at: true,
-              end_at: true,
-            },
-          },
-          lessons: {
+          classes: {
             orderBy: { date: "desc" },
             select: {
               id: true,
               date: true,
               title: true,
-              content: true,
-              duration: true,
-              notes: true,
-            },
-          },
-          invoices: {
-            orderBy: { created_at: "desc" },
-            select: {
-              id: true,
-              amount: true,
-              payment_method: true,
+              description: true,
               status: true,
+              url: true,
               notes: true,
               created_at: true,
+              goal: {
+                select: {
+                  id: true,
+                  title: true,
+                  description: true,
+                  status: true,
+                },
+              },
             },
           },
         },
@@ -192,22 +180,13 @@ export async function studentRoutes(app: FastifyInstance) {
       if (!student)
         return reply.status(404).send({ message: "Aluno não encontrado" });
 
-      const hasLessons = await prisma.lesson.findFirst({
+      const hasClasses = await prisma.class.findFirst({
         where: { student_id: id },
       });
 
-      if (hasLessons)
+      if (hasClasses)
         return reply.status(400).send({
           message: "Não é possível excluir aluno com aulas registradas",
-        });
-
-      const hasInvoices = await prisma.invoice.findFirst({
-        where: { student_id: id },
-      });
-
-      if (hasInvoices)
-        return reply.status(400).send({
-          message: "Não é possível excluir aluno com faturas vinculadas",
         });
 
       await prisma.student.delete({ where: { id } });
