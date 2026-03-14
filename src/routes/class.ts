@@ -7,6 +7,42 @@ export async function classRoutes(app: FastifyInstance) {
   app.addHook("preHandler", app.verifyAuth);
 
   app.get("/", async (request, reply) => {
+    try {
+      const classes = await prisma.class.findMany({
+        where: { user_id: request.user.sub },
+        orderBy: { date: "desc" },
+        include: {
+          student: {
+            select: { id: true, name: true },
+          },
+        },
+      });
+
+      return reply.status(200).send(classes);
+    } catch (error) {
+      console.error("Error fetching classes:", error);
+      return reply.status(500).send({ message: "Erro ao buscar aulas" });
+    }
+  });
+
+  app.get("/:id", async (request, reply) => {
+    const { id } = request.params as {
+      id: string;
+    };
+
+    try {
+      const class_ = await prisma.class.findFirstOrThrow({
+        where: { id, user_id: request.user.sub },
+      });
+
+      return reply.status(200).send(class_);
+    } catch (error) {
+      console.error("Error fetching class:", error);
+      return reply.status(500).send({ message: "Erro ao buscar aula" });
+    }
+  });
+
+  app.get("/student/:student_id", async (request, reply) => {
     const querySchema = z.object({
       student_id: z.uuid(),
     });
@@ -28,24 +64,6 @@ export async function classRoutes(app: FastifyInstance) {
     } catch (error) {
       console.error("Error fetching classes:", error);
       return reply.status(500).send({ message: "Erro ao buscar aulas" });
-    }
-  });
-
-  app.get("/:id", async (request, reply) => {
-    const { student_id, id } = request.params as {
-      student_id: string;
-      id: string;
-    };
-
-    try {
-      const class_ = await prisma.class.findFirstOrThrow({
-        where: { id, student_id, user_id: request.user.sub },
-      });
-
-      return reply.status(200).send(class_);
-    } catch (error) {
-      console.error("Error fetching class:", error);
-      return reply.status(500).send({ message: "Erro ao buscar aula" });
     }
   });
 
