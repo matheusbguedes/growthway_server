@@ -6,34 +6,17 @@ import { z } from "zod";
 export async function goalRoutes(app: FastifyInstance) {
   app.addHook("preHandler", app.verifyAuth);
 
-  app.get("/", async (request, reply) => {
-    const querySchema = z.object({
-      student_id: z.uuid(),
+  app.get("/:student_id", async (request, reply) => {
+    const { student_id } = request.params as { student_id: string };
+
+    const goals = await prisma.goal.findMany({
+      where: { classes: { some: { student_id } } },
     });
 
-    try {
-      const { student_id } = querySchema.parse(request.query);
-
-      const goals = await prisma.goal.findMany({
-        where: { student_id },
-        orderBy: { created_at: "desc" },
-        include: {
-          student: {
-            select: { id: true, name: true },
-          },
-        },
-      });
-
-      return reply.status(200).send(goals);
-    } catch (error) {
-      console.error("Error fetching goals:", error);
-      return reply.status(500).send({ message: "Erro ao buscar metas" });
-    }
+    return reply.status(200).send(goals);
   });
 
   app.post("/", async (request, reply) => {
-    const { student_id } = request.params as { student_id: string };
-
     const bodySchema = z.object({
       title: z.string().min(1),
       description: z.string().optional(),
@@ -49,7 +32,6 @@ export async function goalRoutes(app: FastifyInstance) {
 
       const goal = await prisma.goal.create({
         data: {
-          student_id,
           title,
           description,
           status,
@@ -66,9 +48,8 @@ export async function goalRoutes(app: FastifyInstance) {
   });
 
   app.put("/:id", async (request, reply) => {
-    const { id, student_id } = request.params as {
+    const { id } = request.params as {
       id: string;
-      student_id: string;
     };
 
     const bodySchema = z.object({
@@ -85,7 +66,7 @@ export async function goalRoutes(app: FastifyInstance) {
       );
 
       const goal = await prisma.goal.update({
-        where: { id, student_id },
+        where: { id },
         data: {
           title,
           description,
@@ -103,13 +84,12 @@ export async function goalRoutes(app: FastifyInstance) {
   });
 
   app.delete("/:id", async (request, reply) => {
-    const { id, student_id } = request.params as {
+    const { id } = request.params as {
       id: string;
-      student_id: string;
     };
 
     try {
-      await prisma.goal.delete({ where: { id, student_id } });
+      await prisma.goal.delete({ where: { id } });
 
       return reply.status(200).send({ message: "Meta excluída com sucesso" });
     } catch (error) {

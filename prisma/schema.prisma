@@ -16,6 +16,7 @@ model User {
   updated_at DateTime @default(now()) @updatedAt
 
   students Student[]
+  classes  Class[]
 
   @@map("users")
 }
@@ -33,8 +34,7 @@ model Student {
   user_id String
   user    User   @relation(fields: [user_id], references: [id])
 
-  goals    Goal[]
-  lessons  Lesson[]
+  classes  Class[]
   invoices Invoice[]
 
   @@map("students")
@@ -50,26 +50,32 @@ model Goal {
   created_at  DateTime   @default(now())
   updated_at  DateTime   @default(now()) @updatedAt
 
-  student_id String
-  student    Student @relation(fields: [student_id], references: [id])
+  classes Class[]
 
   @@map("goals")
 }
 
-model Lesson {
-  id         String   @id @default(uuid())
-  date       DateTime @default(now()) @db.Date
-  title      String?
-  content    String
-  duration   Int?
-  notes      String?
-  created_at DateTime @default(now())
-  updated_at DateTime @default(now()) @updatedAt
+model Class {
+  id          String      @id @default(uuid())
+  date        DateTime    @default(now()) @db.Date
+  title       String?
+  description String?
+  status      ClassStatus @default(PENDING)
+  url         String?
+  notes       String?
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @default(now()) @updatedAt
+
+  user_id String
+  user    User   @relation(fields: [user_id], references: [id])
 
   student_id String
   student    Student @relation(fields: [student_id], references: [id])
 
-  @@map("lessons")
+  goal_id String?
+  goal    Goal?   @relation(fields: [goal_id], references: [id])
+
+  @@map("classes")
 }
 
 model Invoice {
@@ -97,6 +103,14 @@ enum StudentStatus {
 
 enum GoalStatus {
   IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum ClassStatus {
+  PENDING
+  IN_PROGRESS
+  IN_REVIEW
   COMPLETED
   CANCELLED
 }

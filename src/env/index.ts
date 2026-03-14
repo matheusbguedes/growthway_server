@@ -7,6 +7,8 @@ const envSchema = z.object({
   SERVER_HOST: z.string().default("0.0.0.0"),
   SERVER_SECRET: z.string(),
   DATABASE_URL: z.string(),
+  GROQ_API_KEY: z.string(),
+  GROQ_BASE_URL: z.string()
 });
 
 const _env = envSchema.safeParse(process.env);

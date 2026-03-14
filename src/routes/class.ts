@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
+import { ClassStatus } from "@prisma-client";
 import { FastifyInstance } from "fastify";
 import { z } from "zod";
 
-export async function lessonRoutes(app: FastifyInstance) {
+export async function classRoutes(app: FastifyInstance) {
   app.addHook("preHandler", app.verifyAuth);
 
   app.get("/", async (request, reply) => {
@@ -13,8 +14,8 @@ export async function lessonRoutes(app: FastifyInstance) {
     try {
       const { student_id } = querySchema.parse(request.query);
 
-      const lessons = await prisma.lesson.findMany({
-        where: { student_id },
+      const classes = await prisma.class.findMany({
+        where: { student_id, user_id: request.user.sub },
         orderBy: { date: "desc" },
         include: {
           student: {
@@ -23,9 +24,9 @@ export async function lessonRoutes(app: FastifyInstance) {
         },
       });
 
-      return reply.status(200).send(lessons);
+      return reply.status(200).send(classes);
     } catch (error) {
-      console.error("Error fetching lessons:", error);
+      console.error("Error fetching classes:", error);
       return reply.status(500).send({ message: "Erro ao buscar aulas" });
     }
   });
@@ -37,13 +38,13 @@ export async function lessonRoutes(app: FastifyInstance) {
     };
 
     try {
-      const lesson = await prisma.lesson.findFirstOrThrow({
-        where: { id, student_id },
+      const class_ = await prisma.class.findFirstOrThrow({
+        where: { id, student_id, user_id: request.user.sub },
       });
 
-      return reply.status(200).send(lesson);
+      return reply.status(200).send(class_);
     } catch (error) {
-      console.error("Error fetching lesson:", error);
+      console.error("Error fetching class:", error);
       return reply.status(500).send({ message: "Erro ao buscar aula" });
     }
   });
@@ -54,30 +55,34 @@ export async function lessonRoutes(app: FastifyInstance) {
     const bodySchema = z.object({
       date: z.coerce.date().optional(),
       title: z.string().optional().nullable(),
-      content: z.string().min(1),
-      duration: z.number().int().positive().optional().nullable(),
+      description: z.string().min(1),
+      status: z.enum(ClassStatus).default(ClassStatus.PENDING),
+      url: z.string().optional().nullable(),
       notes: z.string().optional().nullable(),
+      goal_id: z.uuid().optional(),
     });
 
     try {
-      const { date, title, content, duration, notes } = bodySchema.parse(
-        request.body,
-      );
+      const { date, title, description, status, url, notes, goal_id } =
+        bodySchema.parse(request.body);
 
-      const lesson = await prisma.lesson.create({
+      const class_ = await prisma.class.create({
         data: {
           student_id,
           date,
           title,
-          content,
-          duration,
+          description,
+          status,
+          url,
           notes,
+          user_id: request.user.sub,
+          goal_id: goal_id ?? undefined,
         },
       });
 
-      return reply.status(201).send(lesson);
+      return reply.status(201).send(class_);
     } catch (error) {
-      console.error("Error creating lesson:", error);
+      console.error("Error creating class:", error);
       return reply.status(500).send({ message: "Erro ao criar aula" });
     }
   });
@@ -91,30 +96,34 @@ export async function lessonRoutes(app: FastifyInstance) {
     const bodySchema = z.object({
       date: z.coerce.date().optional(),
       title: z.string().optional().nullable(),
-      content: z.string().min(1).optional(),
-      duration: z.number().int().positive().optional().nullable(),
+      description: z.string().min(1).optional(),
+      status: z.enum(ClassStatus).optional(),
+      url: z.string().optional().nullable(),
       notes: z.string().optional().nullable(),
+      goal_id: z.uuid().optional(),
     });
 
     try {
-      const { date, title, content, duration, notes } = bodySchema.parse(
-        request.body,
-      );
+      const { date, title, description, status, url, notes, goal_id } =
+        bodySchema.parse(request.body);
 
-      const lesson = await prisma.lesson.update({
+      const class_ = await prisma.class.update({
         where: { id, student_id },
         data: {
           date,
           title,
-          content,
-          duration,
+          description,
+          status,
+          url,
           notes,
+          goal_id: goal_id ?? undefined,
+          user_id: request.user.sub,
         },
       });
 
-      return reply.status(200).send(lesson);
+      return reply.status(200).send(class_);
     } catch (error) {
-      console.error("Error updating lesson:", error);
+      console.error("Error updating class:", error);
       return reply.status(500).send({ message: "Erro ao atualizar aula" });
     }
   });
@@ -126,11 +135,11 @@ export async function lessonRoutes(app: FastifyInstance) {
     };
 
     try {
-      await prisma.lesson.delete({ where: { id, student_id } });
+      await prisma.class.delete({ where: { id, student_id } });
 
       return reply.status(200).send({ message: "Aula excluída com sucesso" });
     } catch (error) {
-      console.error("Error deleting lesson:", error);
+      console.error("Error deleting class:", error);
       return reply.status(500).send({ message: "Erro ao excluir aula" });
     }
   });
