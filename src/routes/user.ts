@@ -24,6 +24,19 @@ export async function userRoutes(app: FastifyInstance) {
     }
   });
 
+  app.get("/:id", async (request, reply) => {
+    const { id } = request.params as { id: string };
+
+    try {
+      const user = await prisma.user.findFirstOrThrow({ where: { id } });
+
+      return reply.status(200).send(user);
+    } catch (error) {
+      console.error("Error fetching user:", error);
+      return reply.status(500).send({ message: "Erro ao buscar usuário" });
+    }
+  });
+
   app.post("/", async (request, reply) => {
     const bodySchema = z.object({
       name: z.string(),

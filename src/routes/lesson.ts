@@ -30,6 +30,24 @@ export async function lessonRoutes(app: FastifyInstance) {
     }
   });
 
+  app.get("/:id", async (request, reply) => {
+    const { student_id, id } = request.params as {
+      student_id: string;
+      id: string;
+    };
+
+    try {
+      const lesson = await prisma.lesson.findFirstOrThrow({
+        where: { id, student_id },
+      });
+
+      return reply.status(200).send(lesson);
+    } catch (error) {
+      console.error("Error fetching lesson:", error);
+      return reply.status(500).send({ message: "Erro ao buscar aula" });
+    }
+  });
+
   app.post("/", async (request, reply) => {
     const { student_id } = request.params as { student_id: string };
 
