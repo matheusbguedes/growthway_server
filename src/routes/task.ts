@@ -4,10 +4,7 @@ import { FastifyInstance } from "fastify";
 import { z } from "zod";
 
 export async function taskRoutes(app: FastifyInstance) {
-  // TODO: reativar após login funcionar
-  // app.addHook("preHandler", app.verifyAuth);
-
-  // GET /tasks/:class_id
+    app.addHook("preHandler", app.verifyAuth);
   app.get("/", async (request, reply) => {
     const { class_id } = request.params as { class_id: string };
 
@@ -38,7 +35,6 @@ export async function taskRoutes(app: FastifyInstance) {
     }
   });
 
-  // GET /tasks/:class_id/:id
   app.get("/:id", async (request, reply) => {
     const { class_id, id } = request.params as { class_id: string; id: string };
 
@@ -59,7 +55,6 @@ export async function taskRoutes(app: FastifyInstance) {
     }
   });
 
-  // POST /tasks/:class_id
   app.post("/", async (request, reply) => {
     const { class_id } = request.params as { class_id: string };
 
@@ -92,7 +87,6 @@ export async function taskRoutes(app: FastifyInstance) {
     }
   });
 
-  // PUT /tasks/:class_id/:id
   app.put("/:id", async (request, reply) => {
     const { class_id, id } = request.params as { class_id: string; id: string };
 
@@ -125,7 +119,6 @@ export async function taskRoutes(app: FastifyInstance) {
     }
   });
 
-  // DELETE /tasks/:class_id/:id
   app.delete("/:id", async (request, reply) => {
     const { class_id, id } = request.params as { class_id: string; id: string };
 

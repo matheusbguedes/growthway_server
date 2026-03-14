@@ -44,8 +44,18 @@ export async function studentRoutes(app: FastifyInstance) {
               title: true,
               description: true,
               status: true,
-              notes: true,
               url: true,
+              notes: true,
+              created_at: true,
+              goal_id: true,
+              goal: {
+                select: {
+                  id: true,
+                  title: true,
+                  description: true,
+                  status: true,
+                },
+              },
               tasks: {
                 orderBy: { created_at: "desc" },
                 select: {
@@ -75,7 +85,47 @@ export async function studentRoutes(app: FastifyInstance) {
       if (!student)
         return reply.status(404).send({ message: "Aluno não encontrado" });
 
-      return reply.status(200).send(student);
+      const classesGroupedByGoal = student.classes.reduce(
+        (acc, classItem) => {
+          if (classItem.goal) {
+            const existingGoal = acc.with_goal.find(
+              (g) => g.goal.id === classItem.goal!.id,
+            );
+
+            if (existingGoal) {
+              existingGoal.classes.push(classItem);
+            } else {
+              acc.with_goal.push({
+                goal: classItem.goal,
+                classes: [classItem],
+              });
+            }
+          } else {
+            acc.without_goal.push(classItem);
+          }
+
+          return acc;
+        },
+        {
+          with_goal: [] as Array<{
+            goal: {
+              id: string;
+              title: string;
+              description: string | null;
+              status: string;
+            };
+            classes: typeof student.classes;
+          }>,
+          without_goal: [] as typeof student.classes,
+        },
+      );
+
+      const { classes, ...studentData } = student;
+
+      return reply.status(200).send({
+        ...studentData,
+        classes_grouped: classesGroupedByGoal,
+      });
     } catch (error) {
       console.error("Error fetching student:", error);
       return reply.status(500).send({ message: "Erro ao buscar aluno" });
@@ -164,13 +214,7 @@ export async function studentRoutes(app: FastifyInstance) {
 
       const updated = await prisma.student.update({
         where: { id },
-        data: {
-          name,
-          email,
-          document,
-          phone,
-          status,
-        },
+        data: { name, email, document, phone, status },
       });
 
       return reply.status(200).send(updated);
@@ -199,15 +243,6 @@ export async function studentRoutes(app: FastifyInstance) {
       if (hasClasses)
         return reply.status(400).send({
           message: "Não é possível excluir aluno com aulas registradas",
-        });
-
-      const hasInvoices = await prisma.invoice.findFirst({
-        where: { student_id: id },
-      });
-
-      if (hasInvoices)
-        return reply.status(400).send({
-          message: "Não é possível excluir aluno com faturas vinculadas",
         });
 
       await prisma.student.delete({ where: { id } });
