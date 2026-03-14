@@ -26,30 +26,39 @@ export async function classRoutes(app: FastifyInstance) {
   });
 
   app.get("/:id", async (request, reply) => {
-    const { id } = request.params as {
-      id: string;
-    };
+    const { id } = request.params as { id: string };
 
     try {
       const class_ = await prisma.class.findFirstOrThrow({
         where: { id, user_id: request.user.sub },
+        include: {
+          student: {
+            select: { id: true, name: true },
+          },
+          tasks: {
+            orderBy: { created_at: "desc" },
+            select: {
+              id: true,
+              title: true,
+              description: true,
+              status: true,
+              due_date: true,
+            },
+          },
+        },
       });
 
       return reply.status(200).send(class_);
     } catch (error) {
       console.error("Error fetching class:", error);
-      return reply.status(500).send({ message: "Erro ao buscar aula" });
+      return reply.status(404).send({ message: "Aula não encontrada" });
     }
   });
 
   app.get("/student/:student_id", async (request, reply) => {
-    const querySchema = z.object({
-      student_id: z.uuid(),
-    });
+    const { student_id } = request.params as { student_id: string };
 
     try {
-      const { student_id } = querySchema.parse(request.query);
-
       const classes = await prisma.class.findMany({
         where: { student_id, user_id: request.user.sub },
         orderBy: { date: "desc" },
@@ -68,20 +77,19 @@ export async function classRoutes(app: FastifyInstance) {
   });
 
   app.post("/", async (request, reply) => {
-    const { student_id } = request.params as { student_id: string };
-
     const bodySchema = z.object({
+      student_id: z.string().uuid(),
       date: z.coerce.date().optional(),
       title: z.string().optional().nullable(),
       description: z.string().min(1),
       status: z.enum(ClassStatus).default(ClassStatus.PENDING),
       url: z.string().optional().nullable(),
       notes: z.string().optional().nullable(),
-      goal_id: z.uuid().optional(),
+      goal_id: z.string().uuid().optional(),
     });
 
     try {
-      const { date, title, description, status, url, notes, goal_id } =
+      const { student_id, date, title, description, status, url, notes, goal_id } =
         bodySchema.parse(request.body);
 
       const class_ = await prisma.class.create({
@@ -106,10 +114,7 @@ export async function classRoutes(app: FastifyInstance) {
   });
 
   app.put("/:id", async (request, reply) => {
-    const { student_id, id } = request.params as {
-      student_id: string;
-      id: string;
-    };
+    const { id } = request.params as { id: string };
 
     const bodySchema = z.object({
       date: z.coerce.date().optional(),
@@ -118,7 +123,7 @@ export async function classRoutes(app: FastifyInstance) {
       status: z.enum(ClassStatus).optional(),
       url: z.string().optional().nullable(),
       notes: z.string().optional().nullable(),
-      goal_id: z.uuid().optional(),
+      goal_id: z.string().uuid().optional(),
     });
 
     try {
@@ -126,7 +131,7 @@ export async function classRoutes(app: FastifyInstance) {
         bodySchema.parse(request.body);
 
       const class_ = await prisma.class.update({
-        where: { id, student_id },
+        where: { id },
         data: {
           date,
           title,
@@ -147,13 +152,10 @@ export async function classRoutes(app: FastifyInstance) {
   });
 
   app.delete("/:id", async (request, reply) => {
-    const { id, student_id } = request.params as {
-      id: string;
-      student_id: string;
-    };
+    const { id } = request.params as { id: string };
 
     try {
-      await prisma.class.delete({ where: { id, student_id } });
+      await prisma.class.delete({ where: { id } });
 
       return reply.status(200).send({ message: "Aula excluída com sucesso" });
     } catch (error) {

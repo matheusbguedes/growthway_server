@@ -36,26 +36,26 @@ export async function studentRoutes(app: FastifyInstance) {
       const student = await prisma.student.findFirst({
         where: { id, user_id },
         include: {
-          goals: {
-            orderBy: { created_at: "desc" },
-            select: {
-              id: true,
-              title: true,
-              description: true,
-              status: true,
-              start_at: true,
-              end_at: true,
-            },
-          },
-          lessons: {
+          classes: {
             orderBy: { date: "desc" },
             select: {
               id: true,
               date: true,
               title: true,
-              content: true,
-              duration: true,
+              description: true,
+              status: true,
               notes: true,
+              url: true,
+              tasks: {
+                orderBy: { created_at: "desc" },
+                select: {
+                  id: true,
+                  title: true,
+                  description: true,
+                  status: true,
+                  due_date: true,
+                },
+              },
             },
           },
           invoices: {
@@ -192,11 +192,11 @@ export async function studentRoutes(app: FastifyInstance) {
       if (!student)
         return reply.status(404).send({ message: "Aluno não encontrado" });
 
-      const hasLessons = await prisma.lesson.findFirst({
+      const hasClasses = await prisma.class.findFirst({
         where: { student_id: id },
       });
 
-      if (hasLessons)
+      if (hasClasses)
         return reply.status(400).send({
           message: "Não é possível excluir aluno com aulas registradas",
         });
