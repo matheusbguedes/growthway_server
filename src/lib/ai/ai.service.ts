@@ -8,8 +8,11 @@ export class AIService {
     env.GROQ_BASE_URL
   )
 
-  async generateText(prompt: string): Promise<string> {
-    return this.groq.generate(prompt)
+  async generateText(
+    prompt: string,
+    options?: { maxTokens?: number }
+  ): Promise<string> {
+    return this.groq.generate(prompt, options?.maxTokens ?? 500)
   }
 
 }
