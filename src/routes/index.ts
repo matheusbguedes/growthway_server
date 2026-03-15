@@ -7,6 +7,7 @@ import { goalRoutes } from "./goal";
 import { invoiceRoutes } from "./invoice";
 import { studentRoutes } from "./student";
 import { userRoutes } from "./user";
+import { taskRoutes } from "./task";
 
 export async function appRoutes(app: FastifyInstance) {
   app.register(authRoutes);
@@ -16,5 +17,6 @@ export async function appRoutes(app: FastifyInstance) {
   app.register(classRoutes, { prefix: "/classes" });
   app.register(goalRoutes, { prefix: "/:student_id/goals" });
   app.register(invoiceRoutes, { prefix: "/:student_id/invoices" });
+  app.register(taskRoutes, { prefix: "/tasks/:class_id" });
   app.register(aiRoutes, { prefix: "/ai" });
 }

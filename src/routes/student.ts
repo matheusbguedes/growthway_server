@@ -56,6 +56,27 @@ export async function studentRoutes(app: FastifyInstance) {
                   status: true,
                 },
               },
+              tasks: {
+                orderBy: { created_at: "desc" },
+                select: {
+                  id: true,
+                  title: true,
+                  description: true,
+                  status: true,
+                  due_date: true,
+                },
+              },
+            },
+          },
+          invoices: {
+            orderBy: { created_at: "desc" },
+            select: {
+              id: true,
+              amount: true,
+              payment_method: true,
+              status: true,
+              notes: true,
+              created_at: true,
             },
           },
         },
@@ -193,13 +214,7 @@ export async function studentRoutes(app: FastifyInstance) {
 
       const updated = await prisma.student.update({
         where: { id },
-        data: {
-          name,
-          email,
-          document,
-          phone,
-          status,
-        },
+        data: { name, email, document, phone, status },
       });
 
       return reply.status(200).send(updated);

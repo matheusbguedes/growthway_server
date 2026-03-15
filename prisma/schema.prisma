@@ -75,7 +75,24 @@ model Class {
   goal_id String?
   goal    Goal?   @relation(fields: [goal_id], references: [id])
 
+  tasks Task[]
+
   @@map("classes")
+}
+
+model Task {
+  id          String     @id @default(uuid())
+  title       String
+  description String?
+  status      TaskStatus @default(PENDING)
+  due_date    DateTime?  @db.Date
+  created_at  DateTime   @default(now())
+  updated_at  DateTime   @default(now()) @updatedAt
+
+  class_id String
+  class    Class  @relation(fields: [class_id], references: [id])
+
+  @@map("tasks")
 }
 
 model Invoice {
