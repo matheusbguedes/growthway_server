@@ -90,7 +90,7 @@ model Task {
   updated_at  DateTime   @default(now()) @updatedAt
 
   class_id String
-  class    Class  @relation(fields: [class_id], references: [id])
+  class    Class  @relation(fields: [class_id], references: [id], onDelete: Cascade)
 
   @@map("tasks")
 }
