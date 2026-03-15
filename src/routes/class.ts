@@ -151,10 +151,11 @@ export async function classRoutes(app: FastifyInstance) {
     }
   });
 
-  app.delete("/:id", async (request, reply) => {
+app.delete("/:id", async (request, reply) => {
     const { id } = request.params as { id: string };
 
     try {
+      await prisma.task.deleteMany({ where: { class_id: id } });
       await prisma.class.delete({ where: { id } });
 
       return reply.status(200).send({ message: "Aula excluída com sucesso" });
